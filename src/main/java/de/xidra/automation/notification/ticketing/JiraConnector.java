@@ -51,7 +51,11 @@ public class JiraConnector
     public static final String ENDPOINT_ISSUE = "/rest/api/2/issue/";
     public static final String ENDPOINT_PROJECT = "/rest/api/2/project/";
 
-    static Logger log = LoggerFactory.getLogger(JiraConnector.class);
+    public static final String COMPONENTS = "components";
+    public static final String COMMENT = "comment";
+    public static final String ATTACHMENTS = "attachments";
+
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     public JiraConnector(String type, String URL, String user, String password) {
         this.type = type;
@@ -62,24 +66,15 @@ public class JiraConnector
 
     public boolean checkIfApplicationIsOnboarded(String project, String application)
     {
-        String ENDPOINT_COMPONENT = ENDPOINT_PROJECT + project + "/components";
+        String ENDPOINT_COMPONENT = ENDPOINT_PROJECT + project + "/" + COMPONENTS;
         try
         {
             CloseableHttpClient httpclient = HttpClients.createDefault();
             HttpGet httpGet = new HttpGet(URL + ENDPOINT_COMPONENT);
 
-
             addHeaderForCredentials(httpGet);
 
-            /*
-            String data = "{\"fields\": {\"project\":{\"key\": \"DEP\"},\"summary\": \"Einlieferung "+ vendorDelivery.getApplication() + " " + vendorDelivery.getVersion() + " erfolgreich verarbeitet. \",\"description\": \"Einlieferung " + vendorDelivery.getApplication() + " " + vendorDelivery.getVersion() + " erfolgreich verarbeitet\",\"issuetype\": {\"name\": \"Aufgabe\"}}}";
-            StringEntity params =new StringEntity(data);
-            params.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-            params.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE,"application/json;charset=UTF-8"));
-            */
             httpGet.setHeader("Accept", "application/json");
-
-            //httpPost.setEntity(params);
 
             try (CloseableHttpResponse response2 = httpclient.execute(httpGet)) {
                 log.info(response2.getStatusLine().toString());
@@ -118,12 +113,12 @@ public class JiraConnector
     }
 
 
-    public boolean checkAndCreateNewApplicationVersion(String application, String version)
+    public boolean checkAndCreateNewApplicationVersion(String application, String version) throws Exception
     {
-        return true;
+        throw new Exception("Method not yet implemented");
     }
 
-    public String issueTicket(String location,String application, String version)
+    public String issueTicket(String project,String ticketType, String message,String description)
     {
         try
         {
@@ -134,10 +129,9 @@ public class JiraConnector
             addHeaderForCredentials(httpPost);
 
 
-            String data = "{\"fields\": {\"project\":{\"key\": \"DEP\"},\"summary\": \"Einlieferung "+ application + " " + version + " erfolgreich verarbeitet. \",\"description\": \"Einlieferung " + application + " " + version + " erfolgreich verarbeitet\",\"issuetype\": {\"name\": \"Konfiguration\"}}}";
-            StringEntity params =new StringEntity(data);
-            params.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-            params.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE,"application/json;charset=UTF-8"));
+            String data = "{\"fields\": {\"project\":{\"key\": \"" + project + "\"},\"summary\": \" "+ message + "\",\"description\": \"" + description + "\",\"issuetype\": {\"name\": \""+ticketType+"\"}}}";
+            StringEntity params = new StringEntity(data);
+            setContentInformation(params);
             httpPost.setHeader("Accept", "application/json");
 
             httpPost.setEntity(params);
@@ -155,7 +149,6 @@ public class JiraConnector
             } finally {
                 response2.close();
             }
-
         }
         catch (Exception e)
         {
@@ -170,7 +163,7 @@ public class JiraConnector
         try
         {
             CloseableHttpClient httpclient = HttpClients.createDefault();
-            HttpPost httpPost = new HttpPost(URL + ENDPOINT_ISSUE + ticketNo + "/comment");
+            HttpPost httpPost = new HttpPost(URL + ENDPOINT_ISSUE + ticketNo + "/" + COMMENT);
 
 
             addHeaderForCredentials(httpPost);
@@ -178,8 +171,7 @@ public class JiraConnector
 
             String data = "{\"body\": \" " + message + "\"}";
             StringEntity params =new StringEntity(data);
-            params.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-            params.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE,"application/json;charset=UTF-8"));
+            setContentInformation(params);
             httpPost.setHeader("Accept", "application/json");
 
             httpPost.setEntity(params);
@@ -204,12 +196,17 @@ public class JiraConnector
         }
     }
 
+    private void setContentInformation(StringEntity params) {
+        params.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+        params.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE,"application/json;charset=UTF-8"));
+    }
+
 
     public boolean addAttachmentToIssue(String issueKey, String fullfilename) throws IOException {
 
         CloseableHttpClient httpclient = HttpClients.createDefault();
 
-        HttpPost httppost = new HttpPost(URL + ENDPOINT_ISSUE + issueKey + "/attachments");
+        HttpPost httppost = new HttpPost(URL + ENDPOINT_ISSUE + issueKey + "/" + ATTACHMENTS);
         httppost.setHeader("X-Atlassian-Token", "nocheck");
 
         addHeaderForCredentials(httppost);
@@ -238,12 +235,5 @@ public class JiraConnector
         else
             return false;
 
-    }
-
-    public static void main(String[] args)
-    {
-        JiraConnector jiraConnector = new JiraConnector("Jira","http://dockerhost:18080","evdb","evdb");
-        log.info(""+jiraConnector.checkIfApplicationIsOnboarded("DEP", "10-10-10 cyclos"));
-        //jiraConnector.issueTicket(null,null);
     }
 }

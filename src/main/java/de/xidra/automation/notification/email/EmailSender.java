@@ -47,7 +47,7 @@ public class EmailSender
         this.password = password;
     }
 
-    public void notifyRecipients(String application, String version,String from, List<String> contacts)
+    public void notifyRecipients(String subject, String message,String from, List<String> contacts)
     {
         Email email = new SimpleEmail();
         email.setHostName(host);
@@ -59,21 +59,9 @@ public class EmailSender
         try
         {
             email.setFrom(from);
-            email.setSubject("Lieferung erfolgreich verarbeitet: " + application + " " + version);
+            email.setSubject(subject);
 
-            StringBuffer stringBuffer = new StringBuffer();
-            stringBuffer.append("Sehr geehrte Damen und Herren,");
-            stringBuffer.append("\r\n");
-            stringBuffer.append("\r\n");
-            stringBuffer.append("Wir haben Ihre Lieferung für die Applikation " + application + " "  + version );
-            stringBuffer.append("erhalten und erfolgreich um " + (new Date()).toString() + " verarbeitet.");
-
-            stringBuffer.append("\r\n");
-            stringBuffer.append("\r\n");
-            stringBuffer.append("Mit freundlichen Grüßen,");
-            stringBuffer.append("Ihr Einlieferungsteam");
-
-            email.setMsg(stringBuffer.toString());
+            email.setMsg(message);
 
 
             for(String contact : contacts)
